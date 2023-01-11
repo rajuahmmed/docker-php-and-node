@@ -44,6 +44,9 @@ RUN set -ex; \
 		mysqli \
 		zip \
 	; \
+# Install Xdebug
+	pecl install xdebug-3.1.6; \
+	docker-php-ext-enable xdebug; \
 # WARNING: imagick is likely not supported on Alpine: https://github.com/Imagick/imagick/issues/328
 # https://pecl.php.net/package/imagick
 	pecl install imagick-3.6.0; \
@@ -72,6 +75,9 @@ RUN set -ex; \
 	err="$(php --version 3>&1 1>&2 2>&3)"; \
 	[ -z "$err" ]
 
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN set -eux; \
@@ -97,6 +103,13 @@ RUN { \
 		echo 'ignore_repeated_source = Off'; \
 		echo 'html_errors = Off'; \
 	} > /usr/local/etc/php/conf.d/error-logging.ini
+
+# SETUP PHP-FPM CONFIG SETTINGS (max_children / max_requests)
+RUN echo 'pm.max_children = 15' >> /usr/local/etc/php-fpm.d/zz-docker.conf && \
+    echo 'pm.max_requests = 500' >> /usr/local/etc/php-fpm.d/zz-docker.conf
+
+# Change xdebug mode to develop
+RUN echo 'xdebug.mode=develop,debug' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 # Install SVN
 RUN apk add --no-cache subversion
