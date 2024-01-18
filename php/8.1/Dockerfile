@@ -17,7 +17,18 @@ RUN set -eux; \
 		imagemagick \
 # Needed for xdebug
 		linux-headers \
+# Install Git
+		git \
+		git-lfs \
+		# gpg \
+		less \
+		openssh \
+		patch \
+		mysql-client \
 	;
+
+# Install git lfs
+RUN git lfs install;
 
 # install the PHP extensions we need (https://make.wordpress.org/hosting/handbook/handbook/server-environment/#php-extensions)
 RUN set -ex; \
@@ -105,6 +116,19 @@ RUN { \
 		echo 'ignore_repeated_source = Off'; \
 		echo 'html_errors = Off'; \
 	} > /usr/local/etc/php/conf.d/error-logging.ini
+
+# Add upload.ini
+RUN { \
+		echo 'memory_limit = 512M'; \
+		echo 'upload_max_filesize = 128M'; \
+		echo 'post_max_size = 128M'; \
+		echo 'max_execution_time = 600'; \
+	} > /usr/local/etc/php/conf.d/upload.ini
+
+# Add wp-cli
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
+	chmod +x wp-cli.phar && \
+	mv wp-cli.phar /usr/local/bin/wp
 
 # SETUP PHP-FPM CONFIG SETTINGS (max_children / max_requests)
 RUN echo 'pm.max_children = 15' >> /usr/local/etc/php-fpm.d/zz-docker.conf && \
